@@ -393,19 +393,7 @@ getFlickrSizesChecker = function(botData, cb) {
 			};
 		};
 
-		console.log("All URLs: " + botData.allFlickrURLs);
-
-		// If we have one or more images, grab one at random
-		if (botData.allFlickrURLs > 0) {
-
-			// Randomly Pick one URL and one tweet. Make them
-			// finalTweet, finalPic
-
-
-			cb(null, botData);
-		} else {
-			cb(err, botData);
-		}
+		cb(null, botData);
 	}
 }
 
@@ -413,28 +401,48 @@ getFlickrSizesChecker = function(botData, cb) {
 formatTweet = function(botData, cb) {
 	console.log('-- Format Tweet');
 
+	// If we have one or more images, grab one at random
+	if (botData.allFlickrURLs.length > 0) {
+
+		var randomPos = Math.floor(Math.random() * botData.allFlickrURLs.length);
+
+		console.log("Total: " + botData.allFlickrURLs.length);	
+		console.log("Random: " + randomPos);
+
+		botData.finalTweet = botData.allParsedTweets[randomPos];
+		botData.finalPic = botData.allFlickrURLs[randomPos];
+
+		console.log(botData.finalTweet);
+		console.log(botData.finalPic);
+
+		tp.update({
+		    status: botData.finalTweet,
+		    media: request(botData.finalPic),
+		    // in_reply_to_status_id: 000000,
+		    // possibly_sensitive: false,
+		    // lat: 37.7821120598956,
+		    // long: -122.400612831116,
+		    // place_id: 'df51dec6f4ee2b2c',
+		    // display_coordinates: true
+		},
+		function (err, result) {
+		    if (err) {
+		        return console.error('Nope!', err);
+		    }
+		    console.log("Successful post!");
+		});
+	} else {
+
+		cb("We don't have any Flickr images at all. Abort mission!", botData);
+	}
+
+
 	// console.log("===========================");
 	// console.log(botData.origTweet);
 	// console.log(botData.nounList.join(', '));
 	// console.log(botData.flickrSource);
 
-	// tp.update({
-	//     status: botData.origTweet,
-	//     media: request(botData.flickrSource),
-	//     // in_reply_to_status_id: 000000,
-	//     // possibly_sensitive: false,
-	//     // lat: 37.7821120598956,
-	//     // long: -122.400612831116,
-	//     // place_id: 'df51dec6f4ee2b2c',
-	//     // display_coordinates: true
-	// },
-	// function (err, result) {
-	//     if (err) {
-	//         return console.error('Nope!', err);
-	//     }
 
-	//     console.log("Successful post!");
-	// });
 
 
 
