@@ -208,15 +208,10 @@ findNouns = function(botData, cb) {
     	};
     }
 
+
     for (k = 0; k < botData.nounList.length; k++) {
 		botData.allFlickrSearchStrings[k] = botData.nounList[k].join('%20');
     };
-
-	console.log("Tweet: " + botData.allParsedTweets);
-	console.log("Words: " + botData.nounList);
-	console.log("Search: " + botData.allFlickrSearchStrings);
-
-
 
     cb(null, botData);
 }
@@ -251,6 +246,9 @@ randomSort = function() {
 }
 
 
+
+
+
 searchFlickr = function(botData, cb) {
 	console.log('--Search Flickr');
 
@@ -269,20 +267,18 @@ searchFlickr = function(botData, cb) {
 	    				+ "&text=" + botData.allFlickrSearchStrings[i];
 
 	    client.get(flickrURL, function(data, response) {
+			botData.counter++;
+
 	    	var err = {};
 			if (response.statusCode === 200) {
-				botData.counter++;
+
 				var root = data.photos.photo;
 
 				if (root.length > 0) {
 					var pos = Math.floor(Math.random() * root.length);
 					var randomID = root[pos].id;
 
-
 					// Something is happening here. Titles are out of sync with parsed tweets
-
-
-					console.log("Photo title: " + root[pos].title);
 
 				} else {
 					// No Flickr images found for this search
@@ -321,10 +317,10 @@ getFlickrSizes = function(botData, cb) {
 
 	for (i = 0; i < botData.allParsedTweets.length; i++) {
 
-		console.log("Tweet: " + botData.allParsedTweets[i]);
-		console.log("Words: " + botData.nounList[i]);
-		console.log("Search: " + botData.allFlickrSearchStrings[i]);
-		console.log("IDs: " + botData.allFlickrIDs[i]);
+		// console.log("Tweet: " + botData.allParsedTweets[i]);
+		// console.log("Words: " + botData.nounList[i]);
+		// console.log("Search: " + botData.allFlickrSearchStrings[i]);
+		// console.log("IDs: " + botData.allFlickrIDs[i]);
 
 	    var flickrURL = flickrPrefix 
 	    				+ "method=" + flickrGetSizesOptions.method 
@@ -407,17 +403,17 @@ formatTweet = function(botData, cb) {
 		console.log(botData.finalTweet);
 		console.log(botData.finalPic);
 
-		tp.update({
-		    status: botData.finalTweet,
-		    media: request(botData.finalPic)
-		},
-		function (err, result) {
-		    if (err) {
-		        return console.error('Nope!', err);
-		    } else {
-		    console.log("Successful post!");		    	
-		    }
-		});
+		// tp.update({
+		//     status: botData.finalTweet,
+		//     media: request(botData.finalPic)
+		// },
+		// function (err, result) {
+		//     if (err) {
+		//         return console.error('Nope!', err);
+		//     } else {
+		//     console.log("Successful post!");		    	
+		//     }
+		// });
 	} else {
 
 		cb("We don't have any Flickr images at all. Abort mission!", botData);
