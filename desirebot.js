@@ -46,6 +46,7 @@ getPublicTweet = function(cb) {
 				nounList: [],
 				allFlickrSearchStrings: [],
 				allFlickrIDs: [],
+				allFlickrTitles: [],
 				allFlickrURLs: [],
 				allFlickrSources: []
 			};
@@ -212,7 +213,6 @@ findNouns = function(botData, cb) {
     for (k = 0; k < botData.nounList.length; k++) {
 		botData.allFlickrSearchStrings[k] = botData.nounList[k].join('%20');
     };
-
     cb(null, botData);
 }
 
@@ -247,181 +247,170 @@ randomSort = function() {
 
 
 
+getAllFlickrIDs = function(botData, cb) {
+	console.log('--Get All Flickr IDs');
+	
+    async.map(botData.allFlickrSearchStrings, getFlickrID, function(err, flickrResults){
+    	for (i = 0; i < flickrResults.length; i++) {
+   			if (flickrResults[i].length > 0) {
+				var pos = Math.floor(Math.random() * flickrResults[i].length);
+				var randomID = flickrResults[i][pos].id;
+				var title = flickrResults[i][pos].title;
 
-
-searchFlickr = function(botData, cb) {
-	console.log('--Search Flickr');
-
-	botData.counter = 0;
-
-	for (i = 0; i < botData.allParsedTweets.length; i++) {
-    	var client = new Client();
-		var sortOption = randomSort();
-	    var flickrURL = flickrPrefix 
-	    				+ "method=" + flickrSearchOptions.method 
-	    				+ "&api_key=" + flickrKey 
-	    				+ "&format=json"
-	    				+ "&sort=" + sortOption
-	    				+ "&content_type=4"
-	    				+ "&nojsoncallback=1"
-	    				+ "&text=" + botData.allFlickrSearchStrings[i];
-
-	    client.get(flickrURL, function(data, response) {
-			botData.counter++;
-
-	    	var err = {};
-			if (response.statusCode === 200) {
-
-				var root = data.photos.photo;
-
-				if (root.length > 0) {
-					var pos = Math.floor(Math.random() * root.length);
-					var randomID = root[pos].id;
-
-					// Something is happening here. Titles are out of sync with parsed tweets
-
-				} else {
-					// No Flickr images found for this search
-					randomID = '';
-				};
-
-				botData.allFlickrIDs[botData.counter - 1] = randomID;
-				cb(null, botData);
+				botData.allFlickrIDs[i] = randomID;
+				botData.allFlickrTitles[i] = title;
 			} else {
-				console.log('Flickr search error - bad response.');
-				cb(err, botData);
-	    	}
-	    });
-	}
+				botData.allFlickrIDs[i] = '';
+			}
+    	}
+
+		cb(err, botData);
+    }); 
 }
 
 
-searchFlickrChecker = function(botData, cb) {
-	if (botData.counter == botData.allParsedTweets.length) {
-		for (i = botData.allFlickrIDs.length; i >= 0; i--) {
-			if (botData.allFlickrIDs[i] == "") {
-				botData.allFlickrIDs.splice(i, 1);
-				botData.allParsedTweets.splice(i, 1);
-			};
-		}
-		cb(null, botData);
-	}
+getFlickrID = function(flickrString, cb) {
+	var client = new Client();
+	var sortOption = randomSort();
+    var flickrURL = flickrPrefix 
+    				+ "method=" + flickrSearchOptions.method 
+    				+ "&api_key=" + flickrKey 
+    				+ "&format=json"
+    				+ "&sort=" + sortOption
+    				+ "&content_type=4"
+    				+ "&nojsoncallback=1"
+    				+ "&text=" + flickrString;
+
+    client.get(flickrURL, function(data, response) {
+    	var err = {};
+		if (response.statusCode === 200) {
+
+			var root = data.photos.photo;
+			cb (null, root);
+
+		} else {
+			console.log('Flickr search error - bad response.');
+			cb(err);
+    	}
+    });
 }
 
 
+flickrIDClean = function(botData, cb) {
+	console.log("--Flickr ID Clean");
 
-getFlickrSizes = function(botData, cb) {
-	console.log('--Get Flickr Sizes');
+	for (i = botData.allFlickrIDs.length; i >= 0; i--) {
+		if (botData.allFlickrIDs[i] == "") {
+			botData.allFlickrIDs.splice(i, 1);
+			botData.allFlickrTitles.splice(i, 1);
+			botData.allParsedTweets.splice(i, 1);
+		};
+	}
+	cb(null, botData);
+}
 
-	botData.counter = 0;
 
-	for (i = 0; i < botData.allParsedTweets.length; i++) {
+getAllFlickrSizes = function(botData, cb) {
+	console.log('--Get All Flickr IDs');
 
-		// console.log("Tweet: " + botData.allParsedTweets[i]);
-		// console.log("Words: " + botData.nounList[i]);
-		// console.log("Search: " + botData.allFlickrSearchStrings[i]);
-		// console.log("IDs: " + botData.allFlickrIDs[i]);
-
-	    var flickrURL = flickrPrefix 
-	    				+ "method=" + flickrGetSizesOptions.method 
-	    				+ "&photo_id=" + botData.allFlickrIDs[i]
-	    				+ "&api_key=" + flickrKey 
-	    				+ "&format=json"
-	    				+ "&nojsoncallback=1";
-
-	    var client = new Client();
-
-	    client.get(flickrURL, function(data, response) {
-			botData.counter++;
-
-			if (response.statusCode === 200) {
-				var root = data.sizes.size,
-					totalVersions = root.length,
+    async.map(botData.allFlickrIDs, getFlickrSizes, function(err, flickrResults){
+    	for (i = 0; i < flickrResults.length; i++) {
+    		for (j = 0; j < flickrResults[i].length; j++) {
+    			var currentPic = flickrResults[i][j],
+					totalVersions = currentPic.length,
 					hasImage = false,
 					picSource = '',
 					picURL = '';
 
-				for (var j = 0; j < totalVersions; j++) {
-					if (root[j].label == "Medium") {
-						picSource = root[j].source;
-						picURL = root[j].url;
-						hasImage = true;
-					}
-				};
-
-				if (hasImage) {
-					botData.allFlickrURLs[botData.counter-1] = picSource;
-					botData.allFlickrSources[botData.counter-1] = picURL;
-				} else {
-					// Flickr: No proper size available
-					botData.allFlickrURLs[botData.counter-1] = '';
+				if (currentPic.label == "Medium") {
+					picSource = currentPic.source;
+					picURL = currentPic.url;
+					hasImage = true;
 				}
 
-				cb(null, botData);
-			} else {
-				console.log('Flickr error response.');
-				cb(err, botData);
-	    	}
-	    });
-	};
+				if (hasImage) {
+					botData.allFlickrURLs[i] = picSource;
+					botData.allFlickrSources[i] = picURL;
+				} else {
+					// Flickr: No proper size available
+					botData.allFlickrURLs[j] = '';
+				}
+    		}
+			// console.log("MY title is: " + botData.allFlickrTitles[i]);
+			// console.log("I am related to: " + botData.allParsedTweets[i]);
+			// console.log("My search string is: " + botData.allFlickrSearchStrings[i]);
+			// console.log("My URL is : " + botData.allFlickrSources[i]);
+    	}
+
+		cb(err, botData);
+    }); 
 }
 
 
-getFlickrSizesChecker = function(botData, cb) {
-	if (botData.counter == botData.allParsedTweets.length) {
-		
-		// Remove any empty elements (No Flickr photo matches)		
-		for (i = botData.allFlickrURLs.length; i >= 0; i--) {
-			if (botData.allFlickrURLs[i] == "") {
-				console.log('Empty!');
-				botData.allFlickrURLs.splice(i, 1);
-				botData.allParsedTweets.splice(i, 1);
-			};
-		};
+getFlickrSizes = function(id, cb) {
+    var client = new Client();
 
-		cb(null, botData);
-	}
+	var flickrURL = flickrPrefix 
+				+ "method=" + flickrGetSizesOptions.method 
+				+ "&photo_id=" + id
+				+ "&api_key=" + flickrKey 
+				+ "&format=json"
+				+ "&nojsoncallback=1";
+
+    client.get(flickrURL, function(data, response) {
+		if (response.statusCode === 200) {
+			var root = data.sizes.size;
+			cb(null, root);
+		} else {
+			console.log('Flickr error response.');
+			cb(err, botData);
+    	}
+    });
 }
 
 
 formatTweet = function(botData, cb) {
 	console.log('--Format Tweet');
 
+	console.log("All Tweets: " + botData.allParsedTweets.length);
+	console.log("All Sources: " + botData.allFlickrSources.length);
+	console.log("All Titles: " + botData.allFlickrTitles.length);
+
+
 	// If we have one or more images, grab one at random
 	if (botData.allFlickrURLs.length > 0) {
+		for (i = botData.allParsedTweets.length; i >= 0; i--) {
+			if (botData.allFlickrSources[i] == "") {
+    			botData.allParsedTweets.splice(i, 1);
+    			botData.allFlickrSources.splice(i, 1);
+    			botData.allFlickrTitles.splice(i, 1);
+			}
+		}
 
-		var randomPos = Math.floor(Math.random() * botData.allFlickrURLs.length);
+		var randomPos = Math.floor(Math.random() * botData.allParsedTweets.length);
 
 		botData.finalTweet = botData.allParsedTweets[randomPos];
 		botData.finalPic = botData.allFlickrURLs[randomPos];
 
-		console.log(botData.allParsedTweets);
-		console.log(botData.nounList);
-		console.log(botData.allFlickrSources);
-
-
 		console.log(botData.finalTweet);
 		console.log(botData.finalPic);
 
-		// tp.update({
-		//     status: botData.finalTweet,
-		//     media: request(botData.finalPic)
-		// },
-		// function (err, result) {
-		//     if (err) {
-		//         return console.error('Nope!', err);
-		//     } else {
-		//     console.log("Successful post!");		    	
-		//     }
-		// });
+		tp.update({
+		    status: botData.finalTweet,
+		    media: request(botData.finalPic)
+		},
+		function (err, result) {
+		    if (err) {
+		        return console.error('Nope!', err);
+		    } else {
+		    console.log("Successful post!");		    	
+		    }
+		});
 	} else {
 
 		cb("We don't have any Flickr images at all. Abort mission!", botData);
 	}
 }
-
-
-
 
 
 // ===========================
@@ -437,13 +426,10 @@ run = function() {
 		getAllWordData, 
 		apiChecker,		
 		findNouns,
-		searchFlickr,
-		searchFlickrChecker,
-		getFlickrSizes,
-		getFlickrSizesChecker,
-		formatTweet,
-		// uploadMedia,
-		// postTweet
+		getAllFlickrIDs,
+		flickrIDClean,
+		getAllFlickrSizes,
+		formatTweet
     ],
     function(err, botData) {
 		if (err) {
