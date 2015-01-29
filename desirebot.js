@@ -316,30 +316,24 @@ getAllFlickrSizes = function(botData, cb) {
     async.map(botData.allFlickrIDs, getFlickrSizes, function(err, flickrResults){
     	for (i = 0; i < flickrResults.length; i++) {
     		for (j = 0; j < flickrResults[i].length; j++) {
-    			var currentPic = flickrResults[i][j],
-					totalVersions = currentPic.length,
-					hasImage = false,
-					picSource = '',
-					picURL = '';
+    			var currentPic = flickrResults[i][j];
+    			var picURL = currentPic.source;
 
 				if (currentPic.label == "Medium") {
-					picSource = currentPic.source;
-					picURL = currentPic.url;
-					hasImage = true;
+					console.log(currentPic);
+					botData.allFlickrURLs[i] = picURL;
+					break;
+				} else {
+					botData.allFlickrURLs[i] = '';
 				}
 
-				if (hasImage) {
-					botData.allFlickrURLs[i] = picSource;
-					botData.allFlickrSources[i] = picURL;
-				} else {
-					// Flickr: No proper size available
-					botData.allFlickrURLs[j] = '';
-				}
+				console.log("J is: " + j);
+
     		}
 			// console.log("MY title is: " + botData.allFlickrTitles[i]);
 			// console.log("I am related to: " + botData.allParsedTweets[i]);
 			// console.log("My search string is: " + botData.allFlickrSearchStrings[i]);
-			// console.log("My URL is : " + botData.allFlickrSources[i]);
+			console.log("All Flickr URLs: " + botData.allFlickrURLs);
     	}
 
 		cb(err, botData);
@@ -372,20 +366,26 @@ getFlickrSizes = function(id, cb) {
 formatTweet = function(botData, cb) {
 	console.log('--Format Tweet');
 
-	console.log("All Tweets: " + botData.allParsedTweets.length);
-	console.log("All Sources: " + botData.allFlickrSources.length);
-	console.log("All Titles: " + botData.allFlickrTitles.length);
+	// console.log("All Tweets: " + botData.allParsedTweets.length);
+	// console.log("All Sources: " + botData.allFlickrURLs.length);
+	// console.log("All Titles: " + botData.allFlickrTitles.length);
 
+	
+	for (x = 0; x < botData.allFlickrURLs.length; x++) {
+		console.log("> " + botData.allFlickrURLs[x]);
+	}
 
 	// If we have one or more images, grab one at random
 	if (botData.allFlickrURLs.length > 0) {
 		for (i = botData.allParsedTweets.length; i >= 0; i--) {
-			if (botData.allFlickrSources[i] == "") {
-    			botData.allParsedTweets.splice(i, 1);
-    			botData.allFlickrSources.splice(i, 1);
-    			botData.allFlickrTitles.splice(i, 1);
-			}
+			// if (botData.allFlickrURLs[i] == '') {
+  	// 			botData.allParsedTweets.splice(i, 1);
+  	// 			botData.allFlickrURLs.splice(i, 1);
+  	// 			botData.allFlickrTitles.splice(i, 1);
+			// }
 		}
+
+
 
 		var randomPos = Math.floor(Math.random() * botData.allParsedTweets.length);
 
@@ -395,17 +395,17 @@ formatTweet = function(botData, cb) {
 		console.log(botData.finalTweet);
 		console.log(botData.finalPic);
 
-		tp.update({
-		    status: botData.finalTweet,
-		    media: request(botData.finalPic)
-		},
-		function (err, result) {
-		    if (err) {
-		        return console.error('Nope!', err);
-		    } else {
-		    console.log("Successful post!");		    	
-		    }
-		});
+		// tp.update({
+		//     status: botData.finalTweet,
+		//     media: request(botData.finalPic)
+		// },
+		// function (err, result) {
+		//     if (err) {
+		//         return console.error('Nope!', err);
+		//     } else {
+		//     console.log("Successful post!");		    	
+		//     }
+		// });
 	} else {
 
 		cb("We don't have any Flickr images at all. Abort mission!", botData);
