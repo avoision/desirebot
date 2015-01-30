@@ -78,12 +78,10 @@ getPublicTweet = function(cb) {
 				botData.allPosts = _.uniq(botData.allPosts);
        			cb(null, botData);
 			} else {
-				var noMatch = "No tweets beginning with \'I just want...\'";
-				cb(noMatch);
+				cb("No tweets beginning with \'I just want...\'");
 			}
 		} else {
-			var noMatch = "There was an error getting a public Tweet. Abandoning EVERYTHING :(";
-			cb(noMatch);
+			cb("There was an error getting a public Tweet. Abandoning EVERYTHING :(");
 		}
     });
 };
@@ -100,7 +98,6 @@ extractWordsFromTweet = function(botData, cb) {
 
     for (i = 0; i < botData.allPosts.length; i++) {
     	var currentTweet = botData.allPosts[i].toLowerCase();
-    	// console.log('currentTweet: ' + currentTweet);
 
 	    _.each(excludePatterns, function(pat) {
 			currentTweet = currentTweet.replace(pat, ' ');
@@ -149,7 +146,6 @@ getAllWordData = function(botData, cb) {
 }
 
 getWordData = function(word, cb) {
-	// console.log('--Get Word Data');
     var client = new Client();
 
     var wordnikWordURLPart1   = 'http://api.wordnik.com:80/v4/word.json/';
@@ -282,15 +278,14 @@ getFlickrID = function(flickrString, cb) {
     				+ "&text=" + flickrString;
 
     client.get(flickrURL, function(data, response) {
-    	var err = {};
 		if (response.statusCode === 200) {
 
 			var root = data.photos.photo;
 			cb (null, root);
 
 		} else {
-			console.log('Flickr search error - bad response.');
-			cb(err);
+			// Flickr search error - bad response.
+			cb(null, "");
     	}
     });
 }
@@ -320,22 +315,13 @@ getAllFlickrSizes = function(botData, cb) {
     			var picURL = currentPic.source;
 
 				if (currentPic.label == "Medium") {
-					console.log(currentPic);
 					botData.allFlickrURLs[i] = picURL;
 					break;
 				} else {
 					botData.allFlickrURLs[i] = '';
 				}
-
-				console.log("J is: " + j);
-
     		}
-			// console.log("MY title is: " + botData.allFlickrTitles[i]);
-			// console.log("I am related to: " + botData.allParsedTweets[i]);
-			// console.log("My search string is: " + botData.allFlickrSearchStrings[i]);
-			console.log("All Flickr URLs: " + botData.allFlickrURLs);
     	}
-
 		cb(err, botData);
     }); 
 }
@@ -356,8 +342,7 @@ getFlickrSizes = function(id, cb) {
 			var root = data.sizes.size;
 			cb(null, root);
 		} else {
-			console.log('Flickr error response.');
-			cb(err, botData);
+			cb('Flickr error response.', botData);
     	}
     });
 }
@@ -366,48 +351,33 @@ getFlickrSizes = function(id, cb) {
 formatTweet = function(botData, cb) {
 	console.log('--Format Tweet');
 
-	// console.log("All Tweets: " + botData.allParsedTweets.length);
-	// console.log("All Sources: " + botData.allFlickrURLs.length);
-	// console.log("All Titles: " + botData.allFlickrTitles.length);
-
-	
-	for (x = 0; x < botData.allFlickrURLs.length; x++) {
-		console.log("> " + botData.allFlickrURLs[x]);
-	}
-
 	// If we have one or more images, grab one at random
 	if (botData.allFlickrURLs.length > 0) {
 		for (i = botData.allParsedTweets.length; i >= 0; i--) {
-			// if (botData.allFlickrURLs[i] == '') {
-  	// 			botData.allParsedTweets.splice(i, 1);
-  	// 			botData.allFlickrURLs.splice(i, 1);
-  	// 			botData.allFlickrTitles.splice(i, 1);
-			// }
+			if (botData.allFlickrURLs[i] == '') {
+  				botData.allParsedTweets.splice(i, 1);
+  				botData.allFlickrURLs.splice(i, 1);
+  				botData.allFlickrTitles.splice(i, 1);
+			}
 		}
-
-
 
 		var randomPos = Math.floor(Math.random() * botData.allParsedTweets.length);
 
 		botData.finalTweet = botData.allParsedTweets[randomPos];
 		botData.finalPic = botData.allFlickrURLs[randomPos];
 
-		console.log(botData.finalTweet);
-		console.log(botData.finalPic);
-
-		// tp.update({
-		//     status: botData.finalTweet,
-		//     media: request(botData.finalPic)
-		// },
-		// function (err, result) {
-		//     if (err) {
-		//         return console.error('Nope!', err);
-		//     } else {
-		//     console.log("Successful post!");		    	
-		//     }
-		// });
+		tp.update({
+		    status: botData.finalTweet,
+		    media: request(botData.finalPic)
+		},
+		function (err, result) {
+		    if (err) {
+		        return console.error('Nope!', err);
+		    } else {
+		    console.log("Successful post!");		    	
+		    }
+		});
 	} else {
-
 		cb("We don't have any Flickr images at all. Abort mission!", botData);
 	}
 }
@@ -434,14 +404,7 @@ run = function() {
     function(err, botData) {
 		if (err) {
 			console.log('There was an error posting to Twitter: ', err);
-
-			// console.log("Twitter Data Length: " + botData.allPostData.length);
-		} else {
-			// console.log('Tweet successful!');  
-			// console.log('Tweet: ', botData.tweetBlock);
 		}
-		
-		// console.log('Base tweet: ', botData.baseTweet);
     });
 }
 
