@@ -6,33 +6,22 @@ var wordfilter    = require('wordfilter');
 var TwitterPic 	  = require('twitter-pic');
 var request       = require('request');
 
-var dbapi = {
- 	consumer_key: 			'QXehs30Y1d1a9llBryXhvpnGx',
-	consumer_secret: 		'xOInwBRPyEh88OWhGWRHggsM1XGdHDChOZOeO8IE9uAJVjFQ2G',
-	access_token: 			'2986319204-dlutETZaVc119t2T9G4kV3oNJwevYsTDuwRQcmF',
-	access_token_secret: 	'ZHVgflUuHea5h34ZBJFIfPQDOicqR5mHedMqY3BJo95Sy'
-};
-
 var t = new Twit({
-    // consumer_key:         process.env.PICKTWOBOT_TWIT_CONSUMER_KEY,
-    // consumer_secret:      process.env.PICKTWOBOT_TWIT_CONSUMER_SECRET,
-    // access_token:         process.env.PICKTWOBOT_TWIT_ACCESS_TOKEN,
-    // access_token_secret:  process.env.PICKTWOBOT_TWIT_ACCESS_TOKEN_SECRET
-
-	consumer_key: 			dbapi.consumer_key,
-	consumer_secret: 		dbapi.consumer_secret,
-	access_token: 			dbapi.access_token,
-	access_token_secret: 	dbapi.access_token_secret
+    consumer_key:         	process.env.DESIREBOT_TWIT_CONSUMER_KEY,
+    consumer_secret:      	process.env.DESIREBOT_TWIT_CONSUMER_SECRET,
+    access_token:         	process.env.DESIREBOT_TWIT_ACCESS_TOKEN,
+    access_token_secret:  	process.env.DESIREBOT_TWIT_ACCESS_TOKEN_SECRET
 });
 
 var tp = new TwitterPic({
-	consumer_key:    		dbapi.consumer_key,
-	consumer_secret: 		dbapi.consumer_secret,
-	token:           		dbapi.access_token,
-	token_secret:    		dbapi.access_token_secret
+	consumer_key:    		process.env.DESIREBOT_TWIT_CONSUMER_KEY,
+	consumer_secret: 		process.env.DESIREBOT_TWIT_CONSUMER_SECRET,
+	token:           		process.env.DESIREBOT_TWIT_ACCESS_TOKEN,
+	token_secret:    		process.env.DESIREBOT_TWIT_ACCESS_TOKEN_SECRET
 });
 
-var wordnikKey = 			'4550935bcdca427d4b40202421409e27912324bf6b829f60f';
+var wordnikKey = 			process.env.DESIREBOT_WORDNIK_KEY;
+
 
 getPublicTweet = function(cb) {
     t.get('search/tweets', {q: '\"i%20just%20want\"', count: 20, result_type: 'recent', lang: 'en'}, function(err, data, response) {
@@ -145,6 +134,7 @@ getAllWordData = function(botData, cb) {
 	}
 }
 
+
 getWordData = function(word, cb) {
     var client = new Client();
 
@@ -170,6 +160,7 @@ getWordData = function(word, cb) {
 		}
     });
 };
+
 
 apiChecker = function(botData, cb) {
 	if (botData.counter == botData.allPostsWordList.length) {
@@ -205,18 +196,18 @@ findNouns = function(botData, cb) {
     	};
     }
 
-
     for (k = 0; k < botData.nounList.length; k++) {
-		botData.allFlickrSearchStrings[k] = botData.nounList[k].join('%20');
+		botData.allFlickrSearchStrings[k] = botData.nounList[k].join(',');
     };
     cb(null, botData);
 }
+
 
 // ===========================
 // Flickr
 // ===========================
 var flickrPrefix = "https://api.flickr.com/services/rest/?",
-	flickrKey = "0370f599a923aa9c317b196ec8a373bd";
+	flickrKey = process.env.DESIREBOT_FLICKR_KEY;
 
 var flickrSearchOptions = {
 	method: "flickr.photos.search",
@@ -242,7 +233,6 @@ randomSort = function() {
 }
 
 
-
 getAllFlickrIDs = function(botData, cb) {
 	console.log('--Get All Flickr IDs');
 	
@@ -259,7 +249,6 @@ getAllFlickrIDs = function(botData, cb) {
 				botData.allFlickrIDs[i] = '';
 			}
     	}
-
 		cb(err, botData);
     }); 
 }
@@ -275,14 +264,12 @@ getFlickrID = function(flickrString, cb) {
     				+ "&sort=" + sortOption
     				+ "&content_type=4"
     				+ "&nojsoncallback=1"
-    				+ "&text=" + flickrString;
+    				+ "&tags=" + flickrString;
 
     client.get(flickrURL, function(data, response) {
 		if (response.statusCode === 200) {
-
 			var root = data.photos.photo;
 			cb (null, root);
-
 		} else {
 			// Flickr search error - bad response.
 			cb(null, "");
@@ -387,8 +374,7 @@ formatTweet = function(botData, cb) {
 // Execute
 // ===========================
 run = function() {
-
-	console.log("========= Start it up! =========");
+	console.log("========= Starting! =========");
 
     async.waterfall([
 		getPublicTweet, 
