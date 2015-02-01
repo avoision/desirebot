@@ -37,7 +37,7 @@ getPublicTweet = function(cb) {
 				allFlickrIDs: [],
 				allFlickrTitles: [],
 				allFlickrURLs: [],
-				allFlickrSources: []
+				allFlickrPages: []
 			};
 			
 			// Loop through all returned statues
@@ -222,9 +222,9 @@ var flickrGetSizesOptions = {
 
 randomSort = function() {
 	var sortOptions = [
-		// 'interestingness-desc', 
-		// 'interestingness-asc', 
-		'relevance'];
+		'interestingness-desc', 
+		'relevance'
+		];
 
 	var totalSorts = sortOptions.length;
 	var randomSort = Math.floor(Math.random() * totalSorts);
@@ -239,7 +239,10 @@ getAllFlickrIDs = function(botData, cb) {
     async.map(botData.allFlickrSearchStrings, getFlickrID, function(err, flickrResults){
     	for (i = 0; i < flickrResults.length; i++) {
    			if (flickrResults[i].length > 0) {
-				var pos = Math.floor(Math.random() * flickrResults[i].length);
+				// var pos = Math.floor(Math.random() * flickrResults[i].length);
+
+				// Randomize from returned selection? Or grab first?
+				var pos = 0;
 				var randomID = flickrResults[i][pos].id;
 				var title = flickrResults[i][pos].title;
 
@@ -260,9 +263,13 @@ getFlickrID = function(flickrString, cb) {
     var flickrURL = flickrPrefix 
     				+ "method=" + flickrSearchOptions.method 
     				+ "&api_key=" + flickrKey 
+    				+ "&safe_search=2"
+    				+ "&content_type=4"
     				+ "&format=json"
     				+ "&sort=" + sortOption
     				+ "&content_type=4"
+    				+ "&tag_mode=AND"
+    				+ "&page=10"
     				+ "&nojsoncallback=1"
     				+ "&tags=" + flickrString;
 
@@ -284,6 +291,7 @@ flickrIDClean = function(botData, cb) {
 	for (i = botData.allFlickrIDs.length; i >= 0; i--) {
 		if (botData.allFlickrIDs[i] == "") {
 			botData.allFlickrIDs.splice(i, 1);
+			botData.allFlickrSearchStrings.splice(i, 1);
 			botData.allFlickrTitles.splice(i, 1);
 			botData.allParsedTweets.splice(i, 1);
 		};
@@ -300,12 +308,15 @@ getAllFlickrSizes = function(botData, cb) {
     		for (j = 0; j < flickrResults[i].length; j++) {
     			var currentPic = flickrResults[i][j];
     			var picURL = currentPic.source;
+    			var picPage = currentPic.url;
 
 				if (currentPic.label == "Medium") {
 					botData.allFlickrURLs[i] = picURL;
+					botData.allFlickrPages[i] = picPage;
 					break;
 				} else {
 					botData.allFlickrURLs[i] = '';
+					botData.allFlickrPages[i] = '';
 				}
     		}
     	}
@@ -344,6 +355,8 @@ formatTweet = function(botData, cb) {
 			if (botData.allFlickrURLs[i] == '') {
   				botData.allParsedTweets.splice(i, 1);
   				botData.allFlickrURLs.splice(i, 1);
+  				botData.allFlickrSearchStrings.splice(i, 1);
+  				botData.allFlickrPages.splice(i, 1);
   				botData.allFlickrTitles.splice(i, 1);
 			}
 		}
@@ -352,6 +365,11 @@ formatTweet = function(botData, cb) {
 
 		botData.finalTweet = botData.allParsedTweets[randomPos];
 		botData.finalPic = botData.allFlickrURLs[randomPos];
+
+		// console.log(botData.allFlickrSearchStrings[randomPos]);
+		// console.log(botData.finalTweet);
+		// console.log(botData.finalPic);
+		// console.log(botData.allFlickrPages[randomPos]);
 
 		tp.update({
 		    status: botData.finalTweet,
