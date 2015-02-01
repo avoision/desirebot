@@ -24,7 +24,7 @@ var wordnikKey = 			process.env.DESIREBOT_WORDNIK_KEY;
 
 
 getPublicTweet = function(cb) {
-    t.get('search/tweets', {q: '\"i%20just%20want\"', count: 20, result_type: 'recent', lang: 'en'}, function(err, data, response) {
+    t.get('search/tweets', {q: '\"i%20just%20want\"', count: 100, result_type: 'recent', lang: 'en'}, function(err, data, response) {
 		if (!err) {
 			var pattern = /^i\ just\ want/;
 			var botData = {
@@ -81,7 +81,7 @@ extractWordsFromTweet = function(botData, cb) {
 
     var excludeNonAlpha       = /[^a-zA-Z]+/;
     var excludeURLs           = /https?:\/\/[-a-zA-Z0-9@:%_\+.~#?&\/=]+/g;
-    var excludeShortAlpha     = /\b[a-z][a-z]?\b/g;
+    var excludeShortAlpha     = /\b[a-z][a-z]?[a-z]?\b/g;
     var excludeHandles        = /@[a-z0-9_-]+/g;
     var excludePatterns       = [excludeURLs, excludeShortAlpha, excludeHandles];
 
@@ -94,27 +94,23 @@ extractWordsFromTweet = function(botData, cb) {
 
 	    botData.allPostsWordList[i] = currentTweet.split(excludeNonAlpha);
     	var excludedElements = [
-			'and','the', 'just', 'want'
+			'and','the', 'just', 'want', 'don'
 		];
     
     	botData.allPostsWordList[i] = _.reject(botData.allPostsWordList[i], function(w) {
 			return _.contains(excludedElements, w);
 		});
 
-    	// Delete any word lists with just one word
-    	if (botData.allPostsWordList[i].length == 1) {
-    		botData.allPostsWordList.splice(i, 1);
-    		continue;
-    	}
-
     	// Clean up any empty elements
     	for (j = botData.allPostsWordList[i].length; j >= 0; j--) {
-    		if (botData.allPostsWordList[i][j] == '') {
+    		if (botData.allPostsWordList[i][j] == '' || botData.allPostsWordList[i][j] == undefined) {
     			botData.allPostsWordList[i].splice(j, 1);
     		};
     	}
-    	botData.allParsedTweets[i] = botData.allPosts[i];
+
+  		botData.allParsedTweets[i] = botData.allPosts[i];
     };
+
     cb(null, botData);
 };
 
@@ -123,7 +119,15 @@ getAllWordData = function(botData, cb) {
 	console.log('--Get All Words');
 	botData.counter = 0;
 
-	// console.log(botData.allPostsWordList);
+	// Word List Cleanup
+    for (j = botData.allPostsWordList.length - 1; j >= 0; j--) {
+		// If word list is one or less, discard it.
+		// The hope here is two or more tags = greater accuracy in terms of photo matching tweet.
+    	if (botData.allPostsWordList[j].length <= 1) {
+			botData.allPostsWordList.splice(j, 1);
+			botData.allParsedTweets.splice(j, 1);
+    	};
+    }
 
 	for (i = 0; i < botData.allPostsWordList.length; i++) {
 	    async.map(botData.allPostsWordList[i], getWordData, function(err, results){
@@ -190,7 +194,7 @@ findNouns = function(botData, cb) {
 
 	// Drop any tweet with no nouns or greater than four
     for (j = botData.nounList.length - 1; j >= 0; j--) {
-    	if ((botData.nounList[j].length == 0) || (botData.nounList[j].length > 4)) {
+    	if ((botData.nounList[j].length < 2) || (botData.nounList[j].length > 4)) {
     		botData.nounList.splice(j, 1);
     		botData.allParsedTweets.splice(j, 1);
     	};
@@ -268,7 +272,7 @@ getFlickrID = function(flickrString, cb) {
     				+ "&format=json"
     				+ "&sort=" + sortOption
     				+ "&content_type=4"
-    				+ "&tag_mode=AND"
+    				+ "&tag_mode=all"
     				+ "&page=10"
     				+ "&nojsoncallback=1"
     				+ "&tags=" + flickrString;
@@ -366,10 +370,9 @@ formatTweet = function(botData, cb) {
 		botData.finalTweet = botData.allParsedTweets[randomPos];
 		botData.finalPic = botData.allFlickrURLs[randomPos];
 
-		// console.log(botData.allFlickrSearchStrings[randomPos]);
-		// console.log(botData.finalTweet);
-		// console.log(botData.finalPic);
-		// console.log(botData.allFlickrPages[randomPos]);
+		console.log("Search String: " + botData.allFlickrSearchStrings[randomPos]);
+		console.log("Tweet:         " + botData.finalTweet);
+		console.log("Pic:           " + botData.allFlickrPages[randomPos]);
 
 		tp.update({
 		    status: botData.finalTweet,
