@@ -56,7 +56,7 @@ getPublicTweet = function(cb) {
 					if (pattern.test(tweet)) {
 						// Does the tweet have a reply, hashtag, or URL?
 						if ((hasReply == -1) && (hasHashtag == -1) && (hasLink == -1) && (hasAmp == -1)) {
-							botData.allPosts.push(tweet);
+							botData.allPosts.push(data.statuses[i].text);
 						}
 					}
 				}
@@ -111,6 +111,20 @@ extractWordsFromTweet = function(botData, cb) {
   		botData.allParsedTweets[i] = botData.allPosts[i];
     };
 
+	// Word List Cleanup
+    for (k = botData.allPostsWordList.length - 1; k >= 0; k--) {
+		// If word list is one or less, discard it.
+		// The hope here is two or more tags = greater accuracy in terms of photo matching tweet.
+    	if (botData.allPostsWordList[k].length <= 1) {
+			botData.allPostsWordList.splice(k, 1);
+			botData.allParsedTweets.splice(k, 1);
+    	};
+    }
+
+    // allParsedTweets
+    // allPosts xxx
+    // allPostsWordList
+
     cb(null, botData);
 };
 
@@ -119,23 +133,25 @@ getAllWordData = function(botData, cb) {
 	console.log('--Get All Words');
 	botData.counter = 0;
 
-	// Word List Cleanup
-    for (j = botData.allPostsWordList.length - 1; j >= 0; j--) {
-		// If word list is one or less, discard it.
-		// The hope here is two or more tags = greater accuracy in terms of photo matching tweet.
-    	if (botData.allPostsWordList[j].length <= 1) {
-			botData.allPostsWordList.splice(j, 1);
-			botData.allParsedTweets.splice(j, 1);
-    	};
-    }
+	getWordListSequence = function(pos) {
+	    async.mapSeries(botData.allPostsWordList[pos], getWordData, function(err, results){
+			botData.wordList[pos] = results;
+   			botData.counter++;
 
-	for (i = 0; i < botData.allPostsWordList.length; i++) {
-	    async.map(botData.allPostsWordList[i], getWordData, function(err, results){
-			botData.wordList[botData.counter] = results;
-	    	botData.counter++;			
-			cb(err, botData);
+   			if (botData.counter == botData.allPostsWordList.length) {
+				cb(err, botData);
+   			} else {
+   				getWordListSequence(botData.counter);
+   			}
 	    }); 
 	}
+
+	getWordListSequence(botData.counter);
+
+    // allParsedTweets
+    // allPosts xxx
+    // allPostsWordList
+    // wordList	
 }
 
 
@@ -166,11 +182,27 @@ getWordData = function(word, cb) {
 };
 
 
-apiChecker = function(botData, cb) {
-	if (botData.counter == botData.allPostsWordList.length) {
-		cb(null, botData);
-	};
-};
+// apiChecker = function(botData, cb) {
+// 	console.log('--API Checker');
+// 	if (botData.counter == botData.allPostsWordList.length) {
+
+// 		// Testing
+// 		for (x = 0; x < botData.allParsedTweets.length; x++) {
+// 			console.log("Tweets:       " + botData.allParsedTweets[x]);
+
+// 			for (z = 0; z < botData.wordList[x].length; z++) {
+// 				console.log(botData.wordList[x][0][0].word);
+// 			}
+// 			// console.log("Word List:    " + botData.wordList[x][0][0].word);
+// 			console.log('---------');
+// 			console.log('');
+// 		}
+
+
+
+// 		cb(null, botData);
+// 	};
+// };
 
 
 findNouns = function(botData, cb) {
@@ -178,7 +210,6 @@ findNouns = function(botData, cb) {
 
 	for (i = 0; i < botData.wordList.length; i++) {
 	    botData.nounList[i] = [];
-	    botData.wordList[i] = _.compact(botData.wordList)[i];
 
 	    _.each(botData.wordList[i], function(wordInfo) {
 	    	if (wordInfo != null) {
@@ -187,8 +218,8 @@ findNouns = function(botData, cb) {
 
 				if (partOfSpeech == 'noun' || partOfSpeech == 'proper-noun') {
 		        	botData.nounList[i].push(word);
-				}
-			}
+				} 
+			} 
 	    });
 	};
 
@@ -203,6 +234,14 @@ findNouns = function(botData, cb) {
     for (k = 0; k < botData.nounList.length; k++) {
 		botData.allFlickrSearchStrings[k] = botData.nounList[k].join(',');
     };
+
+	// allParsedTweets
+    // allPosts xxx
+    // allPostsWordList xxx
+    // wordList xxx
+    // nounList xxx
+    // allFlickrSearchStrings
+
     cb(null, botData);
 }
 
@@ -254,6 +293,7 @@ getAllFlickrIDs = function(botData, cb) {
 				botData.allFlickrTitles[i] = title;
 			} else {
 				botData.allFlickrIDs[i] = '';
+				botData.allFlickrTitles[i] = '';
 			}
     	}
 		cb(err, botData);
@@ -292,6 +332,14 @@ getFlickrID = function(flickrString, cb) {
 flickrIDClean = function(botData, cb) {
 	console.log("--Flickr ID Clean");
 
+
+	// Noun list is not matching up. Go back up and find out where this is happening.
+	// This would all probably be easier if you started writing tests, don't you think?
+
+
+
+
+
 	for (i = botData.allFlickrIDs.length; i >= 0; i--) {
 		if (botData.allFlickrIDs[i] == "") {
 			botData.allFlickrIDs.splice(i, 1);
@@ -300,6 +348,17 @@ flickrIDClean = function(botData, cb) {
 			botData.allParsedTweets.splice(i, 1);
 		};
 	}
+
+
+	// allParsedTweets
+    // allPosts xxx
+    // allPostsWordList xxx
+    // wordList xxx
+    // nounList xxx
+    // allFlickrSearchStrings
+    // allFlickrIDs
+    // allFlickrTitles
+
 	cb(null, botData);
 }
 
@@ -401,7 +460,6 @@ run = function() {
 		getPublicTweet, 
 		extractWordsFromTweet,
 		getAllWordData, 
-		apiChecker,		
 		findNouns,
 		getAllFlickrIDs,
 		flickrIDClean,
@@ -415,11 +473,15 @@ run = function() {
     });
 }
 
-setInterval(function() {
-  try {
-    run();
-  }
-  catch (e) {
-    console.log(e);
-  }
-}, 60000 * 30);
+
+run();
+
+
+// setInterval(function() {
+//   try {
+//     run();
+//   }
+//   catch (e) {
+//     console.log(e);
+//   }
+// }, 60000 * 30);
