@@ -22,7 +22,6 @@ var tp = new TwitterPic({
 
 var wordnikKey = 			process.env.DESIREBOT_WORDNIK_KEY;
 
-
 getPublicTweet = function(cb) {
     t.get('search/tweets', {q: '\"i%20just%20want\"', count: 100, result_type: 'recent', lang: 'en'}, function(err, data, response) {
 		if (!err) {
@@ -225,7 +224,7 @@ findNouns = function(botData, cb) {
 
 	// Drop any tweet with no nouns or greater than four
     for (j = botData.nounList.length - 1; j >= 0; j--) {
-    	if ((botData.nounList[j].length < 2) || (botData.nounList[j].length > 4)) {
+    	if ((botData.nounList[j].length < 2) || (botData.nounList[j].length > 5)) {
     		botData.nounList.splice(j, 1);
     		botData.allParsedTweets.splice(j, 1);
     	};
@@ -282,10 +281,9 @@ getAllFlickrIDs = function(botData, cb) {
     async.map(botData.allFlickrSearchStrings, getFlickrID, function(err, flickrResults){
     	for (i = 0; i < flickrResults.length; i++) {
    			if (flickrResults[i].length > 0) {
-				// var pos = Math.floor(Math.random() * flickrResults[i].length);
-
 				// Randomize from returned selection? Or grab first?
-				var pos = 0;
+				var pos = Math.floor(Math.random() * flickrResults[i].length);
+				// var pos = 0;
 				var randomID = flickrResults[i][pos].id;
 				var title = flickrResults[i][pos].title;
 
@@ -312,10 +310,10 @@ getFlickrID = function(flickrString, cb) {
     				+ "&format=json"
     				+ "&sort=" + sortOption
     				+ "&content_type=4"
-    				+ "&tag_mode=all"
+    				// + "&tag_mode=all"
     				+ "&page=10"
     				+ "&nojsoncallback=1"
-    				+ "&tags=" + flickrString;
+    				+ "&text=" + flickrString;
 
     client.get(flickrURL, function(data, response) {
 		if (response.statusCode === 200) {
@@ -335,10 +333,6 @@ flickrIDClean = function(botData, cb) {
 
 	// Noun list is not matching up. Go back up and find out where this is happening.
 	// This would all probably be easier if you started writing tests, don't you think?
-
-
-
-
 
 	for (i = botData.allFlickrIDs.length; i >= 0; i--) {
 		if (botData.allFlickrIDs[i] == "") {
@@ -471,6 +465,29 @@ run = function() {
 			console.log('There was an error posting to Twitter: ', err);
 		}
     });
+}
+
+// ===========================
+// Cleanup
+// ===========================
+iReallyReallyWantToDeleteAllTweets = function() {
+	t.get('statuses/user_timeline', {screen_name: 'thedesirebot', count: 10}, function(err, data, response) {
+		if (!err) {
+			var liveTweetsArray = [];
+			
+			for (i = 0; i < data.length; i++) {
+				liveTweetsArray.push(data[i].id_str);
+			}
+
+			for (j = 0; j < liveTweetsArray.length; j++) {
+				t.post('statuses/destroy/' + liveTweetsArray[j], {id: liveTweetsArray[j]}, function(err, data, response) {
+					if (!err) {
+						console.log("Deleted!");
+					}
+				});
+			}
+		}
+	})
 }
 
 setInterval(function() {
