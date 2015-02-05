@@ -36,7 +36,8 @@ getPublicTweet = function(cb) {
 				allFlickrIDs: [],
 				allFlickrTitles: [],
 				allFlickrURLs: [],
-				allFlickrPages: []
+				allFlickrPages: [],
+				titleMatchArray: []
 			};
 			
 			// Loop through all returned statues
@@ -80,7 +81,7 @@ extractWordsFromTweet = function(botData, cb) {
 
     var excludeNonAlpha       = /[^a-zA-Z]+/;
     var excludeURLs           = /https?:\/\/[-a-zA-Z0-9@:%_\+.~#?&\/=]+/g;
-    var excludeShortAlpha     = /\b[a-z][a-z]?[a-z]?\b/g;
+    var excludeShortAlpha     = /\b[a-z][a-z]?\b/g;
     var excludeHandles        = /@[a-z0-9_-]+/g;
     var excludePatterns       = [excludeURLs, excludeShortAlpha, excludeHandles];
 
@@ -180,30 +181,6 @@ getWordData = function(word, cb) {
     });
 };
 
-
-// apiChecker = function(botData, cb) {
-// 	console.log('--API Checker');
-// 	if (botData.counter == botData.allPostsWordList.length) {
-
-// 		// Testing
-// 		for (x = 0; x < botData.allParsedTweets.length; x++) {
-// 			console.log("Tweets:       " + botData.allParsedTweets[x]);
-
-// 			for (z = 0; z < botData.wordList[x].length; z++) {
-// 				console.log(botData.wordList[x][0][0].word);
-// 			}
-// 			// console.log("Word List:    " + botData.wordList[x][0][0].word);
-// 			console.log('---------');
-// 			console.log('');
-// 		}
-
-
-
-// 		cb(null, botData);
-// 	};
-// };
-
-
 findNouns = function(botData, cb) {
 	console.log('--Find Nouns');
 
@@ -224,21 +201,21 @@ findNouns = function(botData, cb) {
 
 	// Drop any tweet with no nouns or greater than four
     for (j = botData.nounList.length - 1; j >= 0; j--) {
-    	if ((botData.nounList[j].length < 2) || (botData.nounList[j].length > 5)) {
+    	if ((botData.nounList[j].length < 2) || (botData.nounList[j].length > 7)) {
     		botData.nounList.splice(j, 1);
     		botData.allParsedTweets.splice(j, 1);
     	};
     }
 
     for (k = 0; k < botData.nounList.length; k++) {
-		botData.allFlickrSearchStrings[k] = botData.nounList[k].join(',');
+		botData.allFlickrSearchStrings[k] = botData.nounList[k].join('%20');
     };
 
 	// allParsedTweets
     // allPosts xxx
     // allPostsWordList xxx
     // wordList xxx
-    // nounList xxx
+    // nounList 
     // allFlickrSearchStrings
 
     cb(null, botData);
@@ -264,7 +241,7 @@ var flickrGetSizesOptions = {
 
 randomSort = function() {
 	var sortOptions = [
-		'interestingness-desc', 
+		// 'interestingness-desc', 
 		'relevance'
 		];
 
@@ -330,19 +307,33 @@ getFlickrID = function(flickrString, cb) {
 flickrIDClean = function(botData, cb) {
 	console.log("--Flickr ID Clean");
 
-
-	// Noun list is not matching up. Go back up and find out where this is happening.
-	// This would all probably be easier if you started writing tests, don't you think?
-
+	// Remove anything without an ID (no match)
 	for (i = botData.allFlickrIDs.length; i >= 0; i--) {
 		if (botData.allFlickrIDs[i] == "") {
 			botData.allFlickrIDs.splice(i, 1);
 			botData.allFlickrSearchStrings.splice(i, 1);
 			botData.allFlickrTitles.splice(i, 1);
 			botData.allParsedTweets.splice(i, 1);
+			botData.nounList.splice(i, 1);
 		};
 	}
 
+	// How many words from our search string are in the actual Flickr image title?
+	for (x = 0; x < botData.nounList.length; x++) {
+		var titleWordMatches = 0;
+
+		for (y = 0; y < botData.nounList[x].length; y++) {
+			// If one of our nouns matches a word in the title, let's count it.
+			if (botData.allFlickrTitles[x].indexOf(botData.nounList[x][y]) > -1) {
+				titleWordMatches++;
+			}
+		}
+
+		// Assign the matches to the titleMatchArray. We will use this as a point of comparison, once we know whether we have any images with the proper sizes.
+		botData.titleMatchArray.push(titleWordMatches);
+	};
+
+	console.log(botData.titleMatchArray);
 
 	// allParsedTweets
     // allPosts xxx
@@ -352,6 +343,7 @@ flickrIDClean = function(botData, cb) {
     // allFlickrSearchStrings
     // allFlickrIDs
     // allFlickrTitles
+    // titleMatchArray
 
 	cb(null, botData);
 }
@@ -406,8 +398,10 @@ getFlickrSizes = function(id, cb) {
 formatTweet = function(botData, cb) {
 	console.log('--Format Tweet');
 
-	// If we have one or more images, grab one at random
+	// If we have one or more images
 	if (botData.allFlickrURLs.length > 0) {
+		
+		// Clean up. Remove if no image size exists.
 		for (i = botData.allParsedTweets.length; i >= 0; i--) {
 			if (botData.allFlickrURLs[i] == '') {
   				botData.allParsedTweets.splice(i, 1);
@@ -415,29 +409,63 @@ formatTweet = function(botData, cb) {
   				botData.allFlickrSearchStrings.splice(i, 1);
   				botData.allFlickrPages.splice(i, 1);
   				botData.allFlickrTitles.splice(i, 1);
+  				botData.titleMatchArray.splice(i, 1);
 			}
 		}
 
-		var randomPos = Math.floor(Math.random() * botData.allParsedTweets.length);
+		// Best match info (where one+ word from search string appears in title)
+		var bestMatchImage = [],
+			bestMatchText = [],
+			bestMatchSearch = [],
+			bestMatchTitle = []
+			bestMatchPage = [];
 
-		botData.finalTweet = botData.allParsedTweets[randomPos];
-		botData.finalPic = botData.allFlickrURLs[randomPos];
+		for (x = 0; x < botData.allParsedTweets.length; x++) {
+			if (botData.titleMatchArray[x] > 0) {
+				bestMatchImage.push(botData.allFlickrURLs[x]);
+				bestMatchText.push(botData.allParsedTweets[x]);
+				bestMatchSearch.push(botData.allFlickrSearchStrings[x]);
+				bestMatchTitle.push(botData.allFlickrTitles[x]);
+				bestMatchPage.push(botData.allFlickrPages[x])
+			}
+		}
 
-		console.log("Search String: " + botData.allFlickrSearchStrings[randomPos]);
-		console.log("Tweet:         " + botData.finalTweet);
-		console.log("Pic:           " + botData.allFlickrPages[randomPos]);
+		// If we have any best matches...
+		if (bestMatchImage.length > 0) {
+			console.log("Best Match Found!");
+			var randomPos = Math.floor(Math.random() * bestMatchImage.length);
 
-		tp.update({
-		    status: botData.finalTweet,
-		    media: request(botData.finalPic)
-		},
-		function (err, result) {
-		    if (err) {
-		        return console.error('Nope!', err);
-		    } else {
-		    console.log("Successful post!");		    	
-		    }
-		});
+			botData.finalTweet = bestMatchText[randomPos];
+			botData.finalPic = bestMatchImage[randomPos];
+
+			console.log("Search String: " + bestMatchSearch[randomPos]);
+			console.log("Tweet:         " + botData.finalTweet);
+			console.log("Pic:           " + bestMatchPage[randomPos]);
+
+		// Otherwise, let's just roll the dice on the whole set.
+		} else {
+			console.log("No best match. Using what we got...");
+			var randomPos = Math.floor(Math.random() * botData.allParsedTweets.length);
+
+			botData.finalTweet = botData.allParsedTweets[randomPos];
+			botData.finalPic = botData.allFlickrURLs[randomPos];
+
+			console.log("Search String: " + botData.allFlickrSearchStrings[randomPos]);
+			console.log("Tweet:         " + botData.finalTweet);
+			console.log("Pic:           " + botData.allFlickrPages[randomPos]);
+		};
+
+		// tp.update({
+		//     status: botData.finalTweet,
+		//     media: request(botData.finalPic)
+		// },
+		// function (err, result) {
+		//     if (err) {
+		//         return console.error('Nope!', err);
+		//     } else {
+		//     console.log("Successful post!");		    	
+		//     }
+		// });
 	} else {
 		cb("We don't have any Flickr images at all. Abort mission!", botData);
 	}
@@ -490,11 +518,13 @@ iReallyReallyWantToDeleteAllTweets = function() {
 	})
 }
 
-setInterval(function() {
-  try {
-    run();
-  }
-  catch (e) {
-    console.log(e);
-  }
-}, 60000 * 30);
+run();
+
+// setInterval(function() {
+//   try {
+//     run();
+//   }
+//   catch (e) {
+//     console.log(e);
+//   }
+// }, 60000 * 30);
