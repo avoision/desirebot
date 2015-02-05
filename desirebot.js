@@ -455,17 +455,17 @@ formatTweet = function(botData, cb) {
 			console.log("Pic:           " + botData.allFlickrPages[randomPos]);
 		};
 
-		// tp.update({
-		//     status: botData.finalTweet,
-		//     media: request(botData.finalPic)
-		// },
-		// function (err, result) {
-		//     if (err) {
-		//         return console.error('Nope!', err);
-		//     } else {
-		//     console.log("Successful post!");		    	
-		//     }
-		// });
+		tp.update({
+		    status: botData.finalTweet,
+		    media: request(botData.finalPic)
+		},
+		function (err, result) {
+		    if (err) {
+		        return console.error('Nope!', err);
+		    } else {
+		    console.log("Successful post!");		    	
+		    }
+		});
 	} else {
 		cb("We don't have any Flickr images at all. Abort mission!", botData);
 	}
