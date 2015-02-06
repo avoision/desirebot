@@ -48,15 +48,19 @@ getPublicTweet = function(cb) {
 					hasHashtag = tweet.indexOf('#')
 					hasLink = tweet.indexOf('http');
 					hasAmp = tweet.indexOf('&');
+					isDrake = tweet.indexOf('some head in a comfortable bed');
 
 
 				// Does the tweet contain offensive words?
 				if (!wordfilter.blacklisted(tweet)) {
-					// Does the tweet begin wtih "I just want?"
+					// Does the tweet begin with "I just want?"
 					if (pattern.test(tweet)) {
 						// Does the tweet have a reply, hashtag, or URL?
 						if ((hasReply == -1) && (hasHashtag == -1) && (hasLink == -1) && (hasAmp == -1)) {
-							botData.allPosts.push(data.statuses[i].text);
+							// Is it that damn Drake lyric again?
+							if (isDrake == -1) {
+								botData.allPosts.push(data.statuses[i].text);
+							}
 						}
 					}
 				}
