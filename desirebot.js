@@ -48,7 +48,7 @@ getPublicTweet = function(cb) {
 					hasHashtag = tweet.indexOf('#')
 					hasLink = tweet.indexOf('http');
 					hasAmp = tweet.indexOf('&');
-					isDrake = tweet.indexOf('some head in a comfortable bed');
+					isDrake = tweet.indexOf('just want some head');
 
 
 				// Does the tweet contain offensive words?
