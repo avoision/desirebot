@@ -98,7 +98,7 @@ extractWordsFromTweet = function(botData, cb) {
 
 	    botData.allPostsWordList[i] = currentTweet.split(excludeNonAlpha);
     	var excludedElements = [
-			'and','the', 'just', 'want', 'don'
+			'and','the', 'just', 'want', 'don', 'bed', 'sleep'
 		];
     
     	botData.allPostsWordList[i] = _.reject(botData.allPostsWordList[i], function(w) {
@@ -522,11 +522,13 @@ iReallyReallyWantToDeleteAllTweets = function() {
 	})
 }
 
-setInterval(function() {
-  try {
-    run();
-  }
-  catch (e) {
-    console.log(e);
-  }
-}, 60000 * 30);
+run();
+
+// setInterval(function() {
+//   try {
+//     run();
+//   }
+//   catch (e) {
+//     console.log(e);
+//   }
+// }, 60000 * 30);
