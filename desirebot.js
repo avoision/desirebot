@@ -49,6 +49,7 @@ getPublicTweet = function(cb) {
 					hasLink = tweet.indexOf('http');
 					hasAmp = tweet.indexOf('&');
 					isDrake = tweet.indexOf('just want some head');
+					isPeeWee = tweet.indexOf('just want the money');
 
 
 				// Does the tweet contain offensive words?
@@ -58,7 +59,7 @@ getPublicTweet = function(cb) {
 						// Does the tweet have a reply, hashtag, or URL?
 						if ((hasReply == -1) && (hasHashtag == -1) && (hasLink == -1) && (hasAmp == -1)) {
 							// Is it that damn Drake lyric again?
-							if (isDrake == -1) {
+							if ((isDrake == -1) && (isPeeWee == -1)) {
 								botData.allPosts.push(data.statuses[i].text);
 							}
 						}
