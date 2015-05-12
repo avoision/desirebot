@@ -2,3 +2,4 @@ node_modules
 _assets
 _reference
 .env
+.netrc
