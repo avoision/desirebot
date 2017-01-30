@@ -3,3 +3,4 @@ _assets
 _reference
 .env
 .netrc
+.DS_Store

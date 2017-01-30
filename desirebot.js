@@ -13,6 +13,9 @@ var t = new Twit({
     access_token_secret:  	process.env.DESIREBOT_TWIT_ACCESS_TOKEN_SECRET
 });
 
+// Extend Wordfilter
+wordfilter.addWords(['nigg', 'n!gg', 'sjw', 'social justice', 'pussies', 'semen']);
+
 var tp = new TwitterPic({
 	consumer_key:    		process.env.DESIREBOT_TWIT_CONSUMER_KEY,
 	consumer_secret: 		process.env.DESIREBOT_TWIT_CONSUMER_SECRET,
