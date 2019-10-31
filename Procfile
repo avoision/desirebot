@@ -1,1 +1,1 @@
-worker: node desirebot.js
+worker: node -e 'require("./build/desirebot").desire()'
