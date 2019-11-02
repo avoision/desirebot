@@ -24,7 +24,6 @@ const tp = new TwitterPic({
 
 const flickrPrefix = "https://api.flickr.com/services/rest/?"
 const flickrKey = process.env.DESIREBOT_FLICKR_KEY
-// const wordnikKey = process.env.DESIREBOT_WORDNIK_KEY;
 const twitterQuery = {
   q: '\"i%20just%20want\"',
   count: 40,
@@ -32,7 +31,6 @@ const twitterQuery = {
   lang: 'en',
   include_entities: true,
 }
-
 
 wordfilter.addWords(['nigg', 'n!gg', 'sjw', 'social justice', 'pussies', 'semen']);
 
@@ -43,7 +41,8 @@ async function desire() {
 
   const tweetGroupFilteredByEmoji = filterByEmoji(tweetGroupConverted)
   const tweetGroupFilteredByWordfilter = filterByWordfilter(tweetGroupFilteredByEmoji)
-  const tweetGroupFilteredByPattern = filterByPattern(tweetGroupFilteredByWordfilter)
+  const tweetGroupFilteredByLyrics = filterByLyrics(tweetGroupFilteredByWordfilter)
+  const tweetGroupFilteredByPattern = filterByPattern(tweetGroupFilteredByLyrics)
   const tweetGroupWithWords = extractWordsFromTweet(tweetGroupFilteredByPattern)
   const tweetGroupWithNouns = extractNounsFromWords(tweetGroupWithWords)
 
@@ -109,6 +108,19 @@ function filterByWordfilter(tweetModels: TweetModel[] = []) {
     const blockedTweet = wordfilter.blacklisted(text)
 
     return !blockedTweet
+  })
+
+  return filteredTweets
+}
+
+function filterByLyrics(tweetModels: TweetModel[] = []) {
+  const filteredTweets = tweetModels.filter((model: TweetModel) => {
+    const text = model.text.lowercase
+    const isDrake = text.includes('just want some head')
+    const isPeewee = text.includes('just want the money')
+    const isGooGooDolls = text.includes('just want you to know who i am')
+
+    return !isDrake && !isPeewee && !isGooGooDolls
   })
 
   return filteredTweets
@@ -373,6 +385,7 @@ module.exports = {
   filterByEntities,
   filterByEmoji,
   filterByWordfilter,
+  filterByLyrics,
   filterByPattern,
   extractWordsFromTweet,
   extractNounsFromWords,

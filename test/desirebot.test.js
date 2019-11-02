@@ -147,6 +147,56 @@ describe('desirebot', () => {
     })
   })
 
+  describe('#filterByLyrics', () => {
+    test('excludes Drake', () => {
+      const tweetData = [
+        {
+          text: {
+            lowercase: 'just want some head'
+          }
+        },
+      ]
+      const result = desirebot.filterByLyrics(tweetData)
+      expect(result.length).toBe(0)
+    })
+
+    test('exculdes Peewee', () => {
+      const tweetData = [
+        {
+          text: {
+            lowercase: 'just want the money'
+          }
+        },
+      ]
+      const result = desirebot.filterByLyrics(tweetData)
+      expect(result.length).toBe(0)
+    })
+
+    test('excludes Goo Goo Dolls', () => {
+      const tweetData = [
+        {
+          text: {
+            lowercase: 'just want you to know who i am'
+          }
+        },
+      ]
+      const result = desirebot.filterByLyrics(tweetData)
+      expect(result.length).toBe(0)
+    })
+
+    test('allows something not annoying', () => {
+      const tweetData = [
+        {
+          text: {
+            lowercase: 'just want to avoid annoying lyrics'
+          }
+        },
+      ]
+      const result = desirebot.filterByLyrics(tweetData)
+      expect(result.length).toBe(1)
+    })
+  })
+
   describe('#filterByPattern', () => {
     test('includes if pattern found', () => {
       const tweetData = [{ text: { lowercase: 'i just want some text' }}]

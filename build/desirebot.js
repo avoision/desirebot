@@ -65,7 +65,6 @@ var tp = new TwitterPic({
 });
 var flickrPrefix = "https://api.flickr.com/services/rest/?";
 var flickrKey = process.env.DESIREBOT_FLICKR_KEY;
-// const wordnikKey = process.env.DESIREBOT_WORDNIK_KEY;
 var twitterQuery = {
     q: '\"i%20just%20want\"',
     count: 40,
@@ -76,7 +75,7 @@ var twitterQuery = {
 wordfilter.addWords(['nigg', 'n!gg', 'sjw', 'social justice', 'pussies', 'semen']);
 function desire() {
     return __awaiter(this, void 0, void 0, function () {
-        var rawTweetStatuses, tweetGroupFilteredByEntities, tweetGroupConverted, tweetGroupFilteredByEmoji, tweetGroupFilteredByWordfilter, tweetGroupFilteredByPattern, tweetGroupWithWords, tweetGroupWithNouns, tweetGroupWithFlickrIDs, tweetGroupWithFlickrURLs, tweetGroupScored;
+        var rawTweetStatuses, tweetGroupFilteredByEntities, tweetGroupConverted, tweetGroupFilteredByEmoji, tweetGroupFilteredByWordfilter, tweetGroupFilteredByLyrics, tweetGroupFilteredByPattern, tweetGroupWithWords, tweetGroupWithNouns, tweetGroupWithFlickrIDs, tweetGroupWithFlickrURLs, tweetGroupScored;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0: return [4 /*yield*/, getRawTweetStatuses()];
@@ -86,7 +85,8 @@ function desire() {
                     tweetGroupConverted = convertTweets(tweetGroupFilteredByEntities);
                     tweetGroupFilteredByEmoji = filterByEmoji(tweetGroupConverted);
                     tweetGroupFilteredByWordfilter = filterByWordfilter(tweetGroupFilteredByEmoji);
-                    tweetGroupFilteredByPattern = filterByPattern(tweetGroupFilteredByWordfilter);
+                    tweetGroupFilteredByLyrics = filterByLyrics(tweetGroupFilteredByWordfilter);
+                    tweetGroupFilteredByPattern = filterByPattern(tweetGroupFilteredByLyrics);
                     tweetGroupWithWords = extractWordsFromTweet(tweetGroupFilteredByPattern);
                     tweetGroupWithNouns = extractNounsFromWords(tweetGroupWithWords);
                     return [4 /*yield*/, getAllFlickrIDTitle(tweetGroupWithNouns)];
@@ -153,6 +153,17 @@ function filterByWordfilter(tweetModels) {
         var text = model.text.lowercase;
         var blockedTweet = wordfilter.blacklisted(text);
         return !blockedTweet;
+    });
+    return filteredTweets;
+}
+function filterByLyrics(tweetModels) {
+    if (tweetModels === void 0) { tweetModels = []; }
+    var filteredTweets = tweetModels.filter(function (model) {
+        var text = model.text.lowercase;
+        var isDrake = text.includes('just want some head');
+        var isPeewee = text.includes('just want the money');
+        var isGooGooDolls = text.includes('just want you to know who i am');
+        return !isDrake && !isPeewee && !isGooGooDolls;
     });
     return filteredTweets;
 }
@@ -404,6 +415,7 @@ module.exports = {
     filterByEntities: filterByEntities,
     filterByEmoji: filterByEmoji,
     filterByWordfilter: filterByWordfilter,
+    filterByLyrics: filterByLyrics,
     filterByPattern: filterByPattern,
     extractWordsFromTweet: extractWordsFromTweet,
     extractNounsFromWords: extractNounsFromWords,
